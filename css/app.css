@@ -519,3 +519,71 @@ main {
 }
 
 @keyframes blinken { 50% { border-color: var(--akzent); } }
+
+/* ------------------------------------------------------------ Etappe 3 */
+
+.kachel.gesperrt { opacity: 0.55; border-style: dashed; }
+.kachel.gesperrt svg { color: var(--text-leise); }
+.kachel-hinweis { font-size: 16px; font-weight: 700; color: var(--text-leise); }
+
+.anleitung { padding-left: 1.3em; }
+.anleitung li { margin-bottom: 10px; }
+
+/* Verlauf */
+.verlauf { position: relative; width: 100%; height: 100%; min-height: 120px; }
+.verlauf-svg { width: 100%; height: 100%; border-bottom: 2px solid var(--rand); border-left: 2px solid var(--rand); }
+.verlauf-linie { fill: none; stroke: var(--akzent); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.verlauf-marke { stroke: currentColor; stroke-width: 1.5; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+.verlauf-skala { position: absolute; top: 2px; left: 8px; font-size: 16px; color: var(--text-leise); }
+
+/* Balken */
+.balken {
+  position: relative;
+  width: 100%;
+  height: 48px;
+  align-self: center;
+  border: 2px solid var(--rand);
+  border-radius: 10px;
+  background: var(--flaeche);
+}
+
+.balken-fuellung { height: 100%; width: 0; border-radius: 8px; background: var(--akzent); transition: width 0.1s; }
+
+.balken-marke {
+  position: absolute;
+  top: -2px;
+  bottom: -26px;
+  border-left: 3px solid var(--warnung);
+  padding-left: 4px;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: flex-end;
+}
+
+.mess.laut .status { color: var(--akzent); }
+.mess.sehr-laut { background: var(--warnung); color: #000; }
+.mess.sehr-laut .balken-fuellung { background: #000; }
+
+/* Tabellen */
+.tabelle-rahmen { margin: 0 var(--abstand) var(--abstand); overflow-x: auto; }
+.rechner-inhalt .tabelle-rahmen { margin: 0 0 var(--abstand); }
+.tabelle { width: 100%; border-collapse: collapse; font-size: 20px; font-variant-numeric: tabular-nums; }
+.tabelle caption { text-align: left; font-weight: 800; color: var(--text-leise); padding-bottom: 4px; }
+.tabelle th, .tabelle td { padding: 10px 8px; border-bottom: 1px solid var(--rand); text-align: left; }
+.tabelle thead th { font-size: 17px; color: var(--text-leise); }
+.tabelle tbody th { font-weight: 800; }
+.tabelle-text { font-size: 18px; }
+.reiter-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.reiter-4 .knopf { font-size: 16px; }
+.rechner > .hinweis { margin-bottom: var(--abstand); }
+
+/* Höhenschätzung */
+.hoehe-schritt { margin: 0; padding: 10px var(--abstand); font-size: 22px; font-weight: 800; }
+.hoehe-ergebnis { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; margin: 0; text-align: center; }
+.hoehe-ergebnis .hinweis { margin-top: 12px; text-align: left; }
+.kamera-ersatz { position: absolute; top: 30%; left: var(--abstand); right: var(--abstand); color: #fff; font-size: 20px; text-align: center; }
+.kamera[hidden], .hoehe-ergebnis[hidden] { display: none; }
+/* 80er-Marke: Beschriftung links vom Strich, damit sie die 85 nicht überdeckt */
+.balken-marke.links { border-left: 0; border-right: 3px solid var(--warnung); padding: 0 4px 0 0; }
+.mess.sehr-laut .balken-marke { border-color: #000; color: #000; }

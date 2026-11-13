@@ -84,11 +84,17 @@ export default {
           setze('linealFaktor', null);
           location.hash = 'lineal';
         })),
+      abschnitt('Magnetfeld und Lux-Messer',
+        el('p', {}, 'Magnetometer' in window && 'AmbientLightSensor' in window
+          ? 'Chrome-Flag ist eingeschaltet, beide Werkzeuge sind verfügbar.'
+          : 'Diese beiden Werkzeuge brauchen einmalig das Chrome-Flag „Generic Sensor Extra Classes“. Ein Tipp auf die ausgegraute Kachel zeigt die Anleitung.')),
       abschnitt('Sicherheitshinweise',
         el('ul', {},
           el('li', {}, 'Alle Messwerte sind Richtwerte. Die App ersetzt kein Profi-Werkzeug.'),
           el('li', {}, 'Bei Statik, Gas, Strom und Absturzsicherung immer Fachwerkzeug nutzen.'),
-          el('li', {}, 'Vor dem Bohren in Wände ein Leitungssuchgerät und die Baupläne nutzen.'),
+          el('li', {}, 'Vor dem Bohren in Wände ein Leitungssuchgerät und die Baupläne nutzen. Der Magnetfeld-Detektor findet keine Strom- oder Wasserleitungen.'),
+          el('li', {}, 'Schallpegel und Lux sind Richtwerte. Bei Lärm Gehörschutz tragen.'),
+          el('li', {}, 'Taschenlampe und Kamera nicht bei Arbeiten nutzen, bei denen das Handy herunterfallen oder beschädigt werden kann.'),
           el('li', {}, 'Genauigkeit erst nach dem Nullen auf einer geprüften Fläche: Wasserwaage etwa ±0,3°, Kompass etwa ±5°.'))),
       abschnitt('Über die App',
         el('p', {}, 'Werkbank · Version ', version),

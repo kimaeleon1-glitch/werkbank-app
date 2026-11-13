@@ -3,7 +3,7 @@
 // Bei JEDER Änderung an einer ausgelieferten Datei VERSION erhöhen. Neue
 // Dateien in DATEIEN eintragen (der Test tests/cache.test.mjs prüft das).
 
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 const CACHE = `werkbank-${VERSION}`;
 
 const DATEIEN = [
@@ -25,10 +25,16 @@ const DATEIEN = [
   './js/modules/level.js',
   './js/modules/plumb.js',
   './js/modules/ruler.js',
+  './js/modules/height.js',
+  './js/modules/lux.js',
+  './js/modules/magnet.js',
   './js/modules/settings.js',
+  './js/modules/sound.js',
+  './js/modules/tables.js',
   './js/modules/timer.js',
   './js/modules/torch.js',
   './js/modules/transfer.js',
+  './js/modules/vibration.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable.png'

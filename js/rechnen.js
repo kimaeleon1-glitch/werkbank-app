@@ -85,3 +85,54 @@ export const linealFaktor = (rahmenPx, karteMm = KARTE_MM.breite) => rahmenPx / 
 
 // Startwert vor der Kalibrierung: CSS definiert 96 px pro Zoll.
 export const FAKTOR_STANDARD = 96 / 25.4;
+
+// ------------------------------------------------------------ Höhenschätzung (F14)
+
+// Zwei Peilungen, kein Abstand nötig: Fußpunkt (Winkel nach unten, positiv)
+// und Oberkante (Winkel nach oben, negativ wenn unter Augenhöhe).
+// Abstand d = e ÷ tan(β), Höhe H = e + d × tan(α). Liefert null bei
+// unbrauchbaren Peilungen (Fußpunkt fast waagerecht oder über Augenhöhe).
+export function hoehe(augenhoehe, untenGrad, obenGrad) {
+  if (!(augenhoehe > 0) || !(untenGrad >= 1 && untenGrad < 89) || !(obenGrad > -89 && obenGrad < 89)) return null;
+  const abstand = augenhoehe / Math.tan(rad(untenGrad));
+  return { abstand, hoehe: augenhoehe + abstand * Math.tan(rad(obenGrad)) };
+}
+
+// ------------------------------------------------------------ Schallpegel (F12)
+
+// Effektivwert eines Abschnitts in dBFS (0 = Vollaussteuerung).
+export function rmsDbfs(werte) {
+  let summe = 0;
+  for (const v of werte) summe += v * v;
+  const rms = Math.sqrt(summe / (werte.length || 1));
+  return 20 * Math.log10(Math.max(rms, 1e-8));
+}
+
+// Zeitbewertung „Fast" (125 ms) auf der Leistung: glättet ohne zu verschleppen.
+export function zeitbewertung(zeitkonstanteMs = 125) {
+  let leistung = null;
+  return (dbfs, dtMs) => {
+    const p = 10 ** (dbfs / 10);
+    const a = 1 - Math.exp(-dtMs / zeitkonstanteMs);
+    leistung = leistung === null ? p : leistung + a * (p - leistung);
+    return 10 * Math.log10(Math.max(leistung, 1e-16));
+  };
+}
+
+// Hinweisstufe nach Anforderung F12: ab 80 dB Hinweis, ab 85 dB Warnung.
+export const laermStufe = (db) => (db >= 85 ? 'warnung' : db >= 80 ? 'hinweis' : 'ok');
+
+// ------------------------------------------------------------ Vibration (F13)
+
+// Effektivwert der Beschleunigung (ohne Schwerkraft) über ein Zeitfenster.
+export function vibrationsMesser(fensterMs = 1000) {
+  const werte = []; // { t, q } mit q = Betrag²
+  return (v, t) => {
+    werte.push({ t, q: v.x * v.x + v.y * v.y + v.z * v.z });
+    while (werte.length && werte[0].t < t - fensterMs) werte.shift();
+    return Math.sqrt(werte.reduce((s, w) => s + w.q, 0) / werte.length);
+  };
+}
+
+// Prozentuale Änderung gegenüber einem Vergleichswert („vorher/nachher").
+export const aenderungProzent = (vorher, jetzt) => (vorher > 0 ? ((jetzt - vorher) / vorher) * 100 : null);

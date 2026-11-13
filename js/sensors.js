@@ -1,8 +1,10 @@
 // Sensor-Dienst: die einzige Stelle, die Sensoren des Browsers anspricht.
 // Jede start…-Funktion liefert eine Stopp-Funktion. Fehler kommen als
-// deutscher Text über beiFehler, nie als Ausnahme.
+// deutscher Text: bei Sensoren über beiFehler, bei Kamera, Lampe und
+// Mikrofon (async) als geworfener Text. Nie als unbehandelte Ausnahme.
 
 import { vektorMittel, quaternionZuMatrix, eulerZuMatrix, schwerkraftAusMatrix } from './mathe.js';
+import { rmsDbfs } from './rechnen.js';
 
 const WARTEZEIT_MS = 1500; // so lange wartet jede Quelle auf ihren ersten Messwert
 
@@ -168,17 +170,127 @@ export function starteOrientierung(beiWert, beiFehler, { frequenz = 30 } = {}) {
 
 // ------------------------------------------------------------ Magnetfeld
 
+// Magnetometer und Lichtsensor gibt es in Chrome nur mit dem Flag
+// „Generic Sensor Extra Classes" (chrome://flags).
 export const magnetfeldVerfuegbar = () => 'Magnetometer' in window;
+export const lichtVerfuegbar = () => 'AmbientLightSensor' in window;
 
-// Liefert die Feldstärke in µT. Nur mit dem Chrome-Flag
-// „Generic Sensor Extra Classes"; ohne Flag meldet beiFehler, kein Absturz.
+// Wiederholt den letzten Wert im Takt, solange Chrome nichts Neues meldet
+// (Chrome meldet nur geänderte Werte, siehe starteSchwerkraft).
+function halteglied(frequenz, weiter) {
+  const takt = 1000 / frequenz;
+  let letzter = null;
+  let zeit = 0;
+  const uhr = setInterval(() => {
+    if (letzter !== null && performance.now() - zeit > 1.5 * takt) weiter(letzter);
+  }, takt);
+  return {
+    melde(v) { letzter = v; zeit = performance.now(); weiter(v); },
+    stopp() { clearInterval(uhr); }
+  };
+}
+
+// Liefert das Magnetfeld als Vektor {x, y, z} in µT.
 export function starteMagnetfeld(beiWert, beiFehler, { frequenz = 10 } = {}) {
-  return kette(
-    [generisch('Magnetometer', { frequency: frequenz }, (s) => Math.hypot(s.x, s.y, s.z))],
-    beiWert,
-    beiFehler,
+  const h = halteglied(frequenz, beiWert);
+  const stopp = kette(
+    [generisch('Magnetometer', { frequency: frequenz }, (s) => ({ x: s.x, y: s.y, z: s.z }))],
+    h.melde,
+    (text) => { h.stopp(); beiFehler(text); },
     'Magnetfeldsensor'
   );
+  return () => { h.stopp(); stopp(); };
+}
+
+// Liefert die Beleuchtungsstärke in Lux. Chrome rundet auf 50 lx.
+export function starteLicht(beiWert, beiFehler, { frequenz = 5 } = {}) {
+  const h = halteglied(frequenz, beiWert);
+  const stopp = kette(
+    [generisch('AmbientLightSensor', { frequency: frequenz }, (s) => s.illuminance)],
+    h.melde,
+    (text) => { h.stopp(); beiFehler(text); },
+    'Lichtsensor'
+  );
+  return () => { h.stopp(); stopp(); };
+}
+
+// ------------------------------------------------------------ Bewegung (Vibration)
+
+// Liefert die Beschleunigung ohne Schwerkraft {x, y, z} in m/s² mit Zeitstempel.
+// Reihenfolge: LinearAccelerationSensor → Accelerometer mit Hochpass → devicemotion.
+export function starteBewegung(beiWert, beiFehler, { frequenz = 60 } = {}) {
+  // Hochpass: Schwerkraft als langsamer Mittelwert abziehen.
+  const hochpass = () => {
+    let tief = null;
+    return (v) => {
+      tief = tief ? { x: tief.x + 0.05 * (v.x - tief.x), y: tief.y + 0.05 * (v.y - tief.y), z: tief.z + 0.05 * (v.z - tief.z) } : { ...v };
+      return { x: v.x - tief.x, y: v.y - tief.y, z: v.z - tief.z };
+    };
+  };
+  const hpSensor = hochpass();
+  const hpEreignis = hochpass();
+  const xyz = (s) => ({ x: s.x, y: s.y, z: s.z });
+  const h = halteglied(frequenz, (v) => beiWert(v.filter ? v.filter(v) : v, performance.now()));
+  const stopp = kette(
+    [
+      generisch('LinearAccelerationSensor', { frequency: frequenz }, xyz),
+      generisch('Accelerometer', { frequency: frequenz }, (s) => ({ ...xyz(s), filter: hpSensor })),
+      ereignis('devicemotion', (ev) => {
+        if (ev.acceleration && ev.acceleration.x !== null) return xyz(ev.acceleration);
+        const a = ev.accelerationIncludingGravity;
+        return a && a.x !== null ? { ...xyz(a), filter: hpEreignis } : null;
+      })
+    ],
+    h.melde,
+    (text) => { h.stopp(); beiFehler(text); },
+    'Beschleunigungssensor'
+  );
+  return () => { h.stopp(); stopp(); };
+}
+
+// ------------------------------------------------------------ Mikrofon
+
+const MIKROFON_VERWEIGERT = 'Mikrofon ist nicht erlaubt. In Chrome: Schloss-Symbol neben der Adresse → Berechtigungen → Mikrofon → Zulassen. Danach das Werkzeug neu öffnen.';
+
+// Meldet laufend den Pegel in dBFS (0 = Vollaussteuerung) und die Zeit seit
+// dem letzten Wert. Es wird nichts aufgenommen oder gespeichert.
+// Liefert eine Stopp-Funktion oder wirft einen deutschen Text.
+export async function starteSchallpegel(beiPegel) {
+  if (!navigator.mediaDevices?.getUserMedia) throw 'Kein Mikrofon verfügbar.';
+  let strom;
+  try {
+    // Ohne diese Abschaltungen verfälscht die Sprachaufbereitung den Pegel.
+    strom = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      video: false
+    });
+  } catch (e) {
+    if (e?.name === 'NotAllowedError' || e?.name === 'SecurityError') throw MIKROFON_VERWEIGERT;
+    if (e?.name === 'NotReadableError') throw 'Das Mikrofon wird gerade von einer anderen App benutzt.';
+    throw 'Kein Mikrofon verfügbar.';
+  }
+  const ctx = new AudioContext();
+  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+  const analyse = ctx.createAnalyser();
+  analyse.fftSize = 2048;
+  ctx.createMediaStreamSource(strom).connect(analyse);
+  const puffer = new Float32Array(analyse.fftSize);
+
+  let zuletzt = performance.now();
+  // Takt per setInterval statt requestAnimationFrame: läuft gleichmäßig und
+  // lässt sich sicher stoppen (Codeskizze 20.7 hörte nie auf).
+  const uhr = setInterval(() => {
+    analyse.getFloatTimeDomainData(puffer);
+    const jetzt = performance.now();
+    beiPegel(rmsDbfs(puffer), jetzt - zuletzt);
+    zuletzt = jetzt;
+  }, 50);
+
+  return () => {
+    clearInterval(uhr);
+    strom.getTracks().forEach((t) => t.stop());
+    ctx.close().catch(() => {});
+  };
 }
 
 // ------------------------------------------------------------ Kamera

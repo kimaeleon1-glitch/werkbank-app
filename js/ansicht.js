@@ -138,3 +138,70 @@ export function haltenKnopf(ansicht) {
   ansicht.leiste.append(k);
   return () => gehalten;
 }
+
+// Verlaufsdiagramm der letzten Sekunden. Die y-Achse wächst mit dem größten
+// gesehenen Wert, mindestens bis `minMax`.
+export function verlauf({ sekunden = 10, minMax = 1, einheit = '' } = {}) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 100 40');
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.setAttribute('class', 'verlauf-svg');
+  const linie = document.createElementNS(ns, 'polyline');
+  linie.setAttribute('class', 'verlauf-linie');
+  svg.append(linie);
+  const skala = el('span', { class: 'verlauf-skala' }, '');
+  const element = el('div', { class: 'verlauf', 'aria-hidden': 'true' }, svg, skala);
+  const punkte = [];
+  let groesster = minMax;
+  let marke = null;
+
+  const zeichne = () => {
+    const jetzt = punkte.length ? punkte[punkte.length - 1].t : 0;
+    linie.setAttribute('points', punkte.map((p) =>
+      `${(100 - ((jetzt - p.t) / (sekunden * 1000)) * 100).toFixed(2)},${(40 - (p.w / groesster) * 38).toFixed(2)}`).join(' '));
+    skala.textContent = `${sekunden} s · bis ${Number(groesster.toPrecision(2)).toLocaleString('de-DE')} ${einheit}`;
+    if (marke) {
+      const y = (40 - (marke.wert / groesster) * 38).toFixed(2);
+      marke.setAttribute('y1', y);
+      marke.setAttribute('y2', y);
+    }
+  };
+
+  return {
+    element,
+    neu(wert, t = performance.now()) {
+      punkte.push({ w: wert, t });
+      while (punkte.length && punkte[0].t < t - sekunden * 1000) punkte.shift();
+      groesster = Math.max(groesster, wert * 1.1);
+      zeichne();
+    },
+    // Waagerechte Vergleichslinie (z. B. „vorher") oder null zum Entfernen.
+    vergleich(wert) {
+      marke?.remove();
+      marke = null;
+      if (wert === null) return;
+      marke = document.createElementNS(ns, 'line');
+      marke.setAttribute('class', 'verlauf-marke');
+      marke.setAttribute('x1', '0');
+      marke.setAttribute('x2', '100');
+      marke.wert = wert;
+      svg.append(marke);
+      zeichne();
+    }
+  };
+}
+
+// Anleitung für Werkzeuge, die das Chrome-Flag brauchen (F11, F15).
+export function flagAnleitung(bereich, werkzeug) {
+  bereich.replaceChildren(el('div', { class: 'einstellungen' },
+    el('div', { class: 'fehler' },
+      el('p', { class: 'fehler-titel' }, 'Einmal in Chrome einschalten'),
+      el('p', {}, `${werkzeug} braucht einen Sensor, den Chrome erst nach einer einmaligen Einstellung freigibt. Alle anderen Werkzeuge laufen ohne.`),
+      el('ol', { class: 'anleitung' },
+        el('li', {}, 'In Chrome die Adresse ', el('strong', {}, 'chrome://flags'), ' öffnen (in die Adresszeile tippen).'),
+        el('li', {}, 'Oben im Suchfeld ', el('strong', {}, 'Generic Sensor Extra Classes'), ' eingeben.'),
+        el('li', {}, 'Den Schalter daneben auf ', el('strong', {}, 'Enabled'), ' stellen.'),
+        el('li', {}, 'Unten auf ', el('strong', {}, 'Relaunch'), ' tippen. Chrome startet neu.'),
+        el('li', {}, 'Werkbank wieder öffnen. Die Kachel ist dann nicht mehr ausgegraut.')))));
+}

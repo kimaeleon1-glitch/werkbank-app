@@ -18,6 +18,12 @@ const SYMBOLE = {
   lineal: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><rect x="20" y="4" width="24" height="56" rx="3"/><path d="M20 14h10M20 24h6M20 34h10M20 44h6M20 54h10"/></svg>',
   rechner: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><rect x="12" y="4" width="40" height="56" rx="5"/><rect x="19" y="11" width="26" height="11"/><path d="M21 32h2M31 32h2M41 32h2M21 41h2M31 41h2M41 41h2M21 50h2M31 50h2M41 50h2" stroke-width="5"/></svg>',
   lampe: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><path d="M24 26h16l-3 32H27z"/><path d="M20 18h24v8H20z"/><path d="M32 4v6M18 8l4 5M46 8l-4 5"/></svg>',
+  magnet: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><path d="M14 8v24a18 18 0 0 0 36 0V8H38v24a6 6 0 0 1-12 0V8z"/><path d="M14 18h12M38 18h12"/></svg>',
+  schall: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><path d="M8 24h10l14-12v40L18 40H8z"/><path d="M42 22a14 14 0 0 1 0 20M48 14a24 24 0 0 1 0 36"/></svg>',
+  vibration: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><rect x="22" y="10" width="20" height="44" rx="4"/><path d="M12 20l-6 6 6 6-6 6 6 6M52 20l6 6-6 6 6 6-6 6"/></svg>',
+  hoehe: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><path d="M8 56h48M44 56V8"/><path d="M10 50L44 10M10 50l34 6" stroke-dasharray="5 4"/><circle cx="10" cy="50" r="3" fill="currentColor"/></svg>',
+  lux: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><circle cx="32" cy="32" r="11"/><path d="M32 4v8M32 52v8M4 32h8M52 32h8M12 12l6 6M46 46l6 6M12 52l6-6M46 18l6-6"/></svg>',
+  tabellen: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><rect x="8" y="8" width="48" height="48" rx="4"/><path d="M8 22h48M8 36h48M24 8v48"/></svg>',
   timer: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><circle cx="32" cy="36" r="22"/><path d="M32 36V22M26 6h12M32 6v8"/></svg>'
 };
 
@@ -32,6 +38,12 @@ const MODULE = [
   { id: 'rechner', titel: 'Rechner', datei: './modules/calc.js', messung: false },
   { id: 'lampe', titel: 'Taschenlampe', datei: './modules/torch.js', messung: false },
   { id: 'timer', titel: 'Timer', datei: './modules/timer.js', messung: true },
+  { id: 'magnet', titel: 'Magnetfeld', datei: './modules/magnet.js', messung: true, braucht: 'Magnetometer' },
+  { id: 'schall', titel: 'Schallpegel', datei: './modules/sound.js', messung: true },
+  { id: 'vibration', titel: 'Vibration', datei: './modules/vibration.js', messung: true },
+  { id: 'hoehe', titel: 'Höhe schätzen', datei: './modules/height.js', messung: true },
+  { id: 'lux', titel: 'Lux-Messer', datei: './modules/lux.js', messung: true, braucht: 'AmbientLightSensor' },
+  { id: 'tabellen', titel: 'Tabellen', datei: './modules/tables.js', messung: false },
   { id: 'einstellungen', titel: 'Einstellungen', datei: './modules/settings.js', messung: false, versteckt: true }
 ];
 
@@ -67,12 +79,16 @@ function zeigeStart() {
   document.title = 'Werkbank';
   zurueck.hidden = true;
   einstellungenKnopf.hidden = false;
-  const kacheln = MODULE.filter((m) => !m.versteckt).map((m) =>
-    el('button', {
+  // Werkzeuge, deren Sensor fehlt (Chrome-Flag aus), sind ausgegraut; ein Tipp zeigt die Anleitung.
+  const kacheln = MODULE.filter((m) => !m.versteckt).map((m) => {
+    const gesperrt = m.braucht && !(m.braucht in window);
+    return el('button', {
       type: 'button',
-      class: 'kachel',
+      class: gesperrt ? 'kachel gesperrt' : 'kachel',
       onclick: () => { tonVorbereiten(); vomStart = true; location.hash = m.id; }
-    }, el('span', { html: SYMBOLE[m.id] }), m.titel));
+    }, el('span', { html: SYMBOLE[m.id] }), m.titel,
+    gesperrt ? el('span', { class: 'kachel-hinweis' }, 'Chrome-Flag nötig') : null);
+  });
   inhalt.replaceChildren(
     el('nav', { class: 'kacheln', 'aria-label': 'Werkzeuge' }, kacheln),
     el('p', { class: 'fusszeile' }, 'Alle Messwerte sind Richtwerte. Für sicherheitsrelevante Arbeiten Fachwerkzeug nutzen.')

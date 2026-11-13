@@ -87,7 +87,8 @@ export default {
 
     // Störungserkennung nur mit Chrome-Flag möglich (siehe docs/analyse.md, B3).
     if (magnetfeldVerfuegbar()) {
-      stoppFeld = starteMagnetfeld((ut) => {
+      stoppFeld = starteMagnetfeld(({ x, y, z }) => {
+        const ut = Math.hypot(x, y, z);
         const gestoert = ut < FELD_MIN || ut > FELD_MAX;
         if (gestoert !== feldGestoert) {
           feldGestoert = gestoert;
