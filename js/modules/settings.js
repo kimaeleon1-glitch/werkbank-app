@@ -78,6 +78,12 @@ export default {
             meldung('Nullpunkte zurückgesetzt.');
           }
         })),
+      abschnitt('Lineal',
+        el('p', {}, lies('linealFaktor') ? 'Kalibriert.' : 'Noch nicht kalibriert.'),
+        knopf('Lineal kalibrieren', () => {
+          setze('linealFaktor', null);
+          location.hash = 'lineal';
+        })),
       abschnitt('Sicherheitshinweise',
         el('ul', {},
           el('li', {}, 'Alle Messwerte sind Richtwerte. Die App ersetzt kein Profi-Werkzeug.'),

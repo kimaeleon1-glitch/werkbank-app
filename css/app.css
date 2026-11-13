@@ -66,11 +66,11 @@ body {
 .kopf h1 {
   flex: 1;
   margin: 0;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 800;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.1;
+  hyphens: auto;
+  overflow-wrap: anywhere;
 }
 
 .kopf .knopf { flex: 0 0 auto; min-width: var(--knopf-hoehe); }
@@ -308,6 +308,8 @@ main {
   font-weight: 800;
 }
 
+.eingabe::placeholder { color: var(--text-leise); font-weight: 400; opacity: 0.75; }
+
 /* ------------------------------------------------------------ Einstellungen */
 
 .einstellungen { padding: var(--abstand); }
@@ -332,3 +334,188 @@ main {
 @media (prefers-reduced-motion: reduce) {
   .drehbar, .mess { transition: none; }
 }
+
+/* ------------------------------------------------------------ Kamera-Waage */
+
+.kamera {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.kamera-bild, .kamera-linien, .kamera-linien svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.kamera-bild { object-fit: cover; }
+.kamera-linien path { stroke: #ffffff; filter: drop-shadow(0 0 1px #000); }
+.kamera-linien .horizont { stroke: var(--akzent); }
+.kamera.treffer .kamera-linien path { stroke: #3ddc84; stroke-width: 1.4; }
+
+.kamera-wert {
+  position: absolute;
+  left: 50%;
+  bottom: var(--abstand);
+  transform: translateX(-50%);
+  padding: 8px 20px;
+  border-radius: 14px;
+  background: rgb(0 0 0 / 0.75);
+  color: #fff;
+  font-size: 40px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.kamera.treffer .kamera-wert { background: #3ddc84; color: #000; }
+
+/* ------------------------------------------------------------ Lineal */
+
+.lineal { flex: 1; min-height: 0; position: relative; touch-action: none; overflow: hidden; }
+.lineal-svg { display: block; }
+.strich-skala { stroke: var(--text); stroke-width: 1.5; }
+.skala-zahl { fill: var(--text); font-size: 18px; font-weight: 700; }
+.skala-einheit { fill: var(--text-leise); font-size: 16px; }
+.messstrich line { stroke: var(--akzent); stroke-width: 3; }
+.messband { fill: var(--akzent); opacity: 0.18; }
+
+.lineal-wert {
+  margin: 0;
+  padding: 6px var(--abstand);
+  text-align: center;
+  font-size: 34px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.kalibrier-flaeche { flex: 1; min-height: 0; position: relative; overflow: hidden; }
+
+.karte-rahmen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: 3px solid var(--akzent);
+  border-top: 0;
+  border-left: 0;
+  color: var(--text-leise);
+  font-size: 18px;
+  text-align: center;
+}
+
+.regler-zeile { padding: 0 var(--abstand); }
+.regler { width: 100%; height: 48px; accent-color: var(--akzent); }
+
+/* ------------------------------------------------------------ Rechner */
+
+.rechner { padding-bottom: var(--abstand); }
+
+.reiter {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: var(--abstand);
+}
+
+.reiter .knopf { padding: 0 4px; font-size: 19px; min-height: 60px; }
+.rechner-inhalt { padding: 0 var(--abstand); }
+.rechner-inhalt .auswahl { margin-bottom: 14px; }
+
+.feld { display: block; margin-bottom: 14px; }
+.feld-name { display: block; margin-bottom: 4px; font-size: 18px; color: var(--text-leise); font-weight: 700; }
+.feld-einheit { min-width: 3em; font-size: 22px; }
+.fehler-text { color: var(--warnung); font-weight: 700; }
+
+.ergebnis {
+  margin-top: 8px;
+  padding: 12px 16px;
+  border: 3px solid var(--akzent);
+  border-radius: 14px;
+}
+
+.ergebnis-zeile {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--abstand);
+  margin: 6px 0;
+  font-size: 22px;
+}
+
+.ergebnis-zeile strong { font-size: 28px; font-variant-numeric: tabular-nums; }
+.ergebnis-leer { margin: 6px 0; color: var(--text-leise); }
+
+/* ------------------------------------------------------------ Taschenlampe */
+
+.lampe-mitte { display: flex; flex-direction: column; align-items: center; gap: var(--abstand); }
+
+.lampe-taste {
+  width: min(70vw, 300px);
+  height: min(70vw, 300px);
+  border: 4px solid var(--rand);
+  border-radius: 50%;
+  background: var(--flaeche);
+  color: var(--text);
+  font: inherit;
+  font-size: 34px;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.lampe-taste[aria-pressed="true"] { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-text); }
+.lampe-taste:focus-visible { outline: 4px solid var(--akzent); outline-offset: 4px; }
+
+/* ------------------------------------------------------------ Timer */
+
+.timer { padding-bottom: var(--abstand); }
+.timer .leiste { padding-bottom: 0; }
+.timer-liste { padding: var(--abstand); display: grid; gap: var(--abstand); }
+
+.timer-karte {
+  padding: 12px 14px;
+  border: 2px solid var(--rand);
+  border-radius: 16px;
+  background: var(--flaeche);
+}
+
+.timer-karte .leiste { padding: 8px 0 0; }
+.timer-name { margin: 0; font-size: 20px; font-weight: 700; color: var(--text-leise); }
+.timer-zeit { margin: 0; font-size: 56px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.timer-balken { height: 10px; border-radius: 5px; background: var(--hg); overflow: hidden; }
+.timer-balken div { height: 100%; background: var(--akzent); }
+
+.timer-karte.fertig { border-color: var(--warnung); border-width: 4px; }
+.timer-karte.fertig .timer-zeit { color: var(--warnung); }
+
+.timer-banner {
+  position: fixed;
+  left: var(--abstand);
+  right: var(--abstand);
+  bottom: calc(var(--abstand) + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: var(--abstand);
+  padding: 12px 12px 12px 18px;
+  border: 4px solid var(--warnung);
+  border-radius: 16px;
+  background: var(--hg);
+  color: var(--text);
+  font-size: 22px;
+  z-index: 20;
+}
+
+.timer-banner strong { flex: 1; }
+.timer-banner .knopf { min-width: 120px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .timer-karte.fertig, .timer-banner { animation: blinken 1s steps(2, jump-none) infinite; }
+}
+
+@keyframes blinken { 50% { border-color: var(--akzent); } }

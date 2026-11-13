@@ -12,7 +12,13 @@ const SYMBOLE = {
   wasserwaage: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><rect x="4" y="22" width="56" height="20" rx="4"/><rect x="22" y="26" width="20" height="12" rx="6"/><circle cx="32" cy="32" r="3" fill="currentColor"/></svg>',
   lot: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><path d="M20 6h24M32 6v30"/><path d="M24 38h16l-8 20z" fill="currentColor"/></svg>',
   kompass: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><circle cx="32" cy="32" r="26"/><path d="M32 12l7 20H25z" fill="currentColor"/><path d="M32 52l-7-20h14z"/></svg>',
-  neigung: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><path d="M6 54h52L6 18z"/><path d="M38 54a18 18 0 0 0-5-12"/></svg>'
+  neigung: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><path d="M6 54h52L6 18z"/><path d="M38 54a18 18 0 0 0-5-12"/></svg>',
+  winkel: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><path d="M6 56h24L6 32zM34 56h24V32z"/><path d="M28 20h10m-4-4 4 4-4 4"/></svg>',
+  kamera: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><rect x="6" y="16" width="52" height="38" rx="6"/><path d="M22 16l4-7h12l4 7"/><path d="M2 35h60" stroke-dasharray="6 4"/></svg>',
+  lineal: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><rect x="20" y="4" width="24" height="56" rx="3"/><path d="M20 14h10M20 24h6M20 34h10M20 44h6M20 54h10"/></svg>',
+  rechner: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><rect x="12" y="4" width="40" height="56" rx="5"/><rect x="19" y="11" width="26" height="11"/><path d="M21 32h2M31 32h2M41 32h2M21 41h2M31 41h2M41 41h2M21 50h2M31 50h2M41 50h2" stroke-width="5"/></svg>',
+  lampe: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><path d="M24 26h16l-3 32H27z"/><path d="M20 18h24v8H20z"/><path d="M32 4v6M18 8l4 5M46 8l-4 5"/></svg>',
+  timer: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><circle cx="32" cy="36" r="22"/><path d="M32 36V22M26 6h12M32 6v8"/></svg>'
 };
 
 const MODULE = [
@@ -20,6 +26,12 @@ const MODULE = [
   { id: 'lot', titel: 'Lot', datei: './modules/plumb.js', messung: true },
   { id: 'kompass', titel: 'Kompass', datei: './modules/compass.js', messung: true },
   { id: 'neigung', titel: 'Neigungsmesser', datei: './modules/incline.js', messung: true },
+  { id: 'winkel', titel: 'Winkel übertragen', datei: './modules/transfer.js', messung: true },
+  { id: 'kamera', titel: 'Kamera-Wasserwaage', datei: './modules/camlevel.js', messung: true },
+  { id: 'lineal', titel: 'Lineal', datei: './modules/ruler.js', messung: true },
+  { id: 'rechner', titel: 'Rechner', datei: './modules/calc.js', messung: false },
+  { id: 'lampe', titel: 'Taschenlampe', datei: './modules/torch.js', messung: false },
+  { id: 'timer', titel: 'Timer', datei: './modules/timer.js', messung: true },
   { id: 'einstellungen', titel: 'Einstellungen', datei: './modules/settings.js', messung: false, versteckt: true }
 ];
 

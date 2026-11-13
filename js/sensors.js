@@ -180,3 +180,72 @@ export function starteMagnetfeld(beiWert, beiFehler, { frequenz = 10 } = {}) {
     'Magnetfeldsensor'
   );
 }
+
+// ------------------------------------------------------------ Kamera
+
+const KAMERA_VERWEIGERT = 'Kamera ist nicht erlaubt. In Chrome: Schloss-Symbol neben der Adresse → Berechtigungen → Kamera → Zulassen. Danach das Werkzeug neu öffnen.';
+
+function kameraFehler(e) {
+  if (e?.name === 'NotAllowedError' || e?.name === 'SecurityError') return KAMERA_VERWEIGERT;
+  if (e?.name === 'NotReadableError') return 'Die Kamera wird gerade von einer anderen App benutzt.';
+  return 'Keine Kamera verfügbar.';
+}
+
+// Öffnet die Rückkamera. Liefert { strom, stopp } oder wirft einen deutschen Text.
+// Das Bild wird nur angezeigt, nie gespeichert.
+export async function starteKamera() {
+  if (!navigator.mediaDevices?.getUserMedia) throw 'Keine Kamera verfügbar.';
+  try {
+    const strom = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
+    return { strom, stopp: () => strom.getTracks().forEach((t) => t.stop()) };
+  } catch (e) {
+    throw kameraFehler(e);
+  }
+}
+
+// ------------------------------------------------------------ Taschenlampe
+
+const kannLeuchten = (spur) => {
+  try { return Boolean(spur.getCapabilities?.().torch); } catch { return false; }
+};
+
+// Sucht eine Rückkamera mit Blitz und schaltet ihn ein.
+// Liefert eine Ausschalt-Funktion oder wirft einen deutschen Text.
+// Das Pixel hat mehrere Rückkameras; nicht jede hat den Blitz.
+export async function starteLampe() {
+  if (!navigator.mediaDevices?.getUserMedia) throw 'Keine Kamera verfügbar, daher keine Taschenlampe.';
+  let strom;
+  try {
+    strom = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+  } catch (e) {
+    throw kameraFehler(e);
+  }
+  let spur = strom.getVideoTracks()[0];
+
+  if (!kannLeuchten(spur)) {
+    const genutzt = spur.getSettings().deviceId;
+    strom.getTracks().forEach((t) => t.stop());
+    strom = null;
+    const geraete = (await navigator.mediaDevices.enumerateDevices())
+      .filter((g) => g.kind === 'videoinput' && g.deviceId !== genutzt);
+    for (const g of geraete) {
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: g.deviceId } }, audio: false });
+        if (kannLeuchten(s.getVideoTracks()[0])) { strom = s; spur = s.getVideoTracks()[0]; break; }
+        s.getTracks().forEach((t) => t.stop());
+      } catch { /* nächste Kamera probieren */ }
+    }
+    if (!strom) throw 'Dieses Handy erlaubt die Taschenlampe im Browser nicht.';
+  }
+
+  try {
+    await spur.applyConstraints({ advanced: [{ torch: true }] });
+  } catch {
+    strom.getTracks().forEach((t) => t.stop());
+    throw 'Die Taschenlampe ließ sich nicht einschalten.';
+  }
+  return () => strom.getTracks().forEach((t) => t.stop());
+}

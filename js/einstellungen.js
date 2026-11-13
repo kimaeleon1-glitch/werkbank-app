@@ -14,7 +14,8 @@ const STANDARD = {
   missweisung: 0, // Grad, Ost positiv
   nordModus: 'magnetisch', // magnetisch | geografisch
   lattenLaengeMm: 2000, // Bezugslänge im Neigungsmesser
-  linealFaktor: null, // Etappe 2
+  linealFaktor: null, // CSS-Pixel pro mm, aus der Kalibrierung mit der Bankkarte
+  rechner: {}, // nur Produktfaktoren: ergiebigkeit, sackAusbeute, rollenBreite, rollenLaenge
   flagAnleitungGelesen: false,
   letzteVersion: null
 };
