@@ -373,6 +373,20 @@ main {
 
 .kamera.treffer .kamera-wert { background: #3ddc84; color: #000; }
 
+/* Quadrat in der Mitte, das sich mit der Haltung des Handys dreht */
+.kamera { container-type: size; }
+.kamera-dreher {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: min(100cqw, 100cqh);
+  height: min(100cqw, 100cqh);
+  pointer-events: none;
+  transition: transform 0.25s;
+}
+
+@media (prefers-reduced-motion: reduce) { .kamera-dreher { transition: none; } }
+
 /* ------------------------------------------------------------ Lineal */
 
 .lineal { flex: 1; min-height: 0; position: relative; touch-action: none; overflow: hidden; }

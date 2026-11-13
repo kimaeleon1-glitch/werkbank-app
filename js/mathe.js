@@ -49,6 +49,22 @@ export function neigungKante(g) {
   return { q, abweichung: normiere180(phi - q * 90) };
 }
 
+// Kamera-Wasserwaage: Handy wird wie eine Kamera gehalten (Display zum
+// Betrachter), hochkant, quer oder auf dem Kopf. Liefert die Drehung des
+// Handys in der Bildebene (drehung, für die Linien), das nächstliegende
+// Viertel (für die Schrift) und die Abweichung von der nächsten geraden
+// Haltung. aufrecht = false, wenn das Handy eher flach liegt.
+export function kameraLage(g) {
+  const betrag = Math.hypot(g.x, g.y, g.z) || 1;
+  const { q, abweichung } = neigungKante(g);
+  return {
+    aufrecht: Math.hypot(g.x, g.y) / betrag >= 0.5,
+    drehung: Math.atan2(g.x, g.y) * GRAD,
+    viertel: q,
+    abweichung
+  };
+}
+
 // Lot: Abweichung der Längsachse (y) von der Senkrechten.
 // seitlich > 0: Oberkante nach rechts gekippt. vorn > 0: Oberkante zum
 // Betrachter gekippt. gesamt ist der Winkel zwischen Längsachse und Lot.

@@ -83,6 +83,11 @@ export function zahlAbfragen(titel, text, startwert, einheit) {
   });
 }
 
+// Wie weit die Seite gegenüber dem Handy gedreht ist (0, 90, 180, 270).
+// Installiert ist die App auf Hochformat fixiert, dann ist das 0. Im
+// Browser-Tab dreht Chrome die Seite beim Querhalten mit.
+export const bildschirmWinkel = () => screen.orientation?.angle ?? 0;
+
 // Messansicht: Grafik, großer Wert, Statuszeile, Zusatzzeile, Tastenleiste.
 // Der Block .drehbar lässt sich in Kantenlage um 90° drehen.
 export function messansicht(bereich) {
@@ -118,9 +123,11 @@ export function messansicht(bereich) {
       ansicht.classList.toggle('ist-gehalten', an);
     },
     drehe(viertel) {
-      if (viertel === letzteDrehung) return;
-      letzteDrehung = viertel;
-      drehbar.style.transform = `rotate(${viertel * 90}deg)`;
+      // Dreht Chrome die Seite selbst mit (App nicht installiert), das ausgleichen.
+      const winkel = viertel * 90 - bildschirmWinkel();
+      if (winkel === letzteDrehung) return;
+      letzteDrehung = winkel;
+      drehbar.style.transform = `rotate(${winkel}deg)`;
     }
   };
 }

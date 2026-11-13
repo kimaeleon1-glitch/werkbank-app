@@ -1,10 +1,11 @@
 // F6 Kamera-Wasserwaage: Kamerabild mit Horizont- und Lotlinie, die die
-// Neigung des Handys ausgleichen. Das Bild wird nur angezeigt, nie gespeichert.
+// Neigung des Handys ausgleichen. Funktioniert hochkant, quer und auf dem
+// Kopf; die Anzeige dreht sich mit. Das Bild wird nur angezeigt, nie gespeichert.
 
 import { starteSchwerkraft, starteKamera } from '../sensors.js';
 import { treffer } from '../feedback.js';
-import { lotAbweichung, toleranz, zahl } from '../mathe.js';
-import { el, fehler } from '../ansicht.js';
+import { kameraLage, toleranz, zahl } from '../mathe.js';
+import { el, fehler, bildschirmWinkel } from '../ansicht.js';
 
 const SVG = `<svg viewBox="-50 -50 100 100" preserveAspectRatio="xMidYMid slice">
   <g class="linien">
@@ -19,29 +20,39 @@ export default {
     const video = el('video', { class: 'kamera-bild', autoplay: true, muted: true, playsinline: true });
     const ueberlagerung = el('div', { class: 'kamera-linien', html: SVG });
     const anzeige = el('div', { class: 'kamera-wert', 'aria-live': 'polite' }, 'Kamera startet …');
-    const flaeche = el('div', { class: 'kamera' }, video, ueberlagerung, anzeige);
+    // Quadrat in der Mitte, das sich mit der Haltung dreht; die Anzeige sitzt
+    // an seiner Unterkante – also immer dort, wo für den Betrachter „unten" ist.
+    const dreher = el('div', { class: 'kamera-dreher' }, anzeige);
+    const flaeche = el('div', { class: 'kamera' }, video, ueberlagerung, dreher);
     bereich.replaceChildren(flaeche);
 
     const linien = ueberlagerung.querySelector('.linien');
     const tol = toleranz(0.2, 0.3);
+    let viertel = -1;
     let stoppKamera = () => {};
     let stoppSensor = () => {};
     let aus = false;
 
     function aufWert(g) {
-      const betrag = Math.hypot(g.x, g.y, g.z) || 1;
-      if (g.y / betrag < 0.5) {
-        anzeige.textContent = 'Handy aufrecht halten';
+      const l = kameraLage(g);
+      if (!l.aufrecht) {
+        anzeige.textContent = 'Handy aufrecht oder quer halten';
         flaeche.classList.remove('treffer');
         return;
       }
-      const { seitlich } = lotAbweichung(g);
-      // Das echte Lot und der echte Horizont erscheinen entgegen der Kippung gedreht.
-      linien.setAttribute('transform', `rotate(${(-seitlich).toFixed(2)})`);
-      const { drin, eingetreten } = tol(seitlich);
+      const schirm = bildschirmWinkel();
+      // Linien: Horizont und Lot stehen im Bild entgegen der Drehung des Handys.
+      // Das Kreuz ist um 90° symmetrisch, daher passt es in jeder Haltung.
+      linien.setAttribute('transform', `rotate(${(l.drehung - schirm).toFixed(2)})`);
+      if (l.viertel !== viertel) {
+        viertel = l.viertel;
+        dreher.style.transform = `rotate(${viertel * 90 - schirm}deg)`;
+      }
+      const { drin, eingetreten } = tol(l.abweichung);
       if (eingetreten) treffer();
       flaeche.classList.toggle('treffer', drin);
-      anzeige.textContent = drin ? '✓ Waagerecht' : `${zahl(Math.abs(seitlich))}° ${seitlich > 0 ? '↺' : '↻'}`;
+      // Abweichung < 0: Handy im Uhrzeigersinn verdreht → gegen den Uhrzeigersinn korrigieren.
+      anzeige.textContent = drin ? '✓ Waagerecht' : `${zahl(Math.abs(l.abweichung))}° ${l.abweichung < 0 ? '↺' : '↻'}`;
     }
 
     starteKamera().then(
