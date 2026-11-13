@@ -7,6 +7,7 @@
 import { lies, setze, beobachte } from './einstellungen.js';
 import { bildschirmAn, bildschirmAus, tonVorbereiten } from './feedback.js';
 import { el, fehler, meldung } from './ansicht.js';
+import { sensorLiefert } from './sensors.js';
 
 const SYMBOLE = {
   wasserwaage: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4"><rect x="4" y="22" width="56" height="20" rx="4"/><rect x="22" y="26" width="20" height="12" rx="6"/><circle cx="32" cy="32" r="3" fill="currentColor"/></svg>',
@@ -79,15 +80,23 @@ function zeigeStart() {
   document.title = 'Werkbank';
   zurueck.hidden = true;
   einstellungenKnopf.hidden = false;
-  // Werkzeuge, deren Sensor fehlt (Chrome-Flag aus), sind ausgegraut; ein Tipp zeigt die Anleitung.
+  // Werkzeuge, deren Sensor Chrome nicht freigibt, sind ausgegraut. Erst
+  // ausgegraut zeichnen, dann echt prüfen und gegebenenfalls freischalten.
   const kacheln = MODULE.filter((m) => !m.versteckt).map((m) => {
-    const gesperrt = m.braucht && !(m.braucht in window);
-    return el('button', {
+    const hinweis = el('span', { class: 'kachel-hinweis' }, 'In Chrome derzeit gesperrt');
+    const kachel = el('button', {
       type: 'button',
-      class: gesperrt ? 'kachel gesperrt' : 'kachel',
+      class: m.braucht ? 'kachel gesperrt' : 'kachel',
       onclick: () => { tonVorbereiten(); vomStart = true; location.hash = m.id; }
-    }, el('span', { html: SYMBOLE[m.id] }), m.titel,
-    gesperrt ? el('span', { class: 'kachel-hinweis' }, 'Chrome-Flag nötig') : null);
+    }, el('span', { html: SYMBOLE[m.id] }), m.titel, m.braucht ? hinweis : null);
+    if (m.braucht) {
+      sensorLiefert(m.braucht).then((ok) => {
+        if (!ok) return;
+        kachel.classList.remove('gesperrt');
+        hinweis.remove();
+      });
+    }
+    return kachel;
   });
   inhalt.replaceChildren(
     el('nav', { class: 'kacheln', 'aria-label': 'Werkzeuge' }, kacheln),

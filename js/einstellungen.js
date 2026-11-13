@@ -18,7 +18,6 @@ const STANDARD = {
   rechner: {}, // nur Produktfaktoren: ergiebigkeit, sackAusbeute, rollenBreite, rollenLaenge
   augenhoehe: 1.6, // m, Höhenschätzung
   schallOffset: 120, // dB, Korrektur des Mikrofonpegels (bewusst eher hoch: warnt lieber zu früh)
-  flagAnleitungGelesen: false,
   letzteVersion: null
 };
 

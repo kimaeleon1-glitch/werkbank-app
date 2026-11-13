@@ -85,9 +85,7 @@ export default {
           location.hash = 'lineal';
         })),
       abschnitt('Magnetfeld und Lux-Messer',
-        el('p', {}, 'Magnetometer' in window && 'AmbientLightSensor' in window
-          ? 'Chrome-Flag ist eingeschaltet, beide Werkzeuge sind verfügbar.'
-          : 'Diese beiden Werkzeuge brauchen einmalig das Chrome-Flag „Generic Sensor Extra Classes“. Ein Tipp auf die ausgegraute Kachel zeigt die Anleitung.')),
+        el('p', {}, 'Diese beiden Werkzeuge brauchen Sensoren, die Chrome an Web-Apps derzeit nicht weitergibt. Sie sind deshalb ausgegraut. Gibt Chrome die Sensoren wieder frei, werden sie automatisch nutzbar.')),
       abschnitt('Sicherheitshinweise',
         el('ul', {},
           el('li', {}, 'Alle Messwerte sind Richtwerte. Die App ersetzt kein Profi-Werkzeug.'),

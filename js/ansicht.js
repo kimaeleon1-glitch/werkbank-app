@@ -192,16 +192,13 @@ export function verlauf({ sekunden = 10, minMax = 1, einheit = '' } = {}) {
   };
 }
 
-// Anleitung für Werkzeuge, die das Chrome-Flag brauchen (F11, F15).
-export function flagAnleitung(bereich, werkzeug) {
+// Hinweis für Werkzeuge, deren Sensor Chrome nicht freigibt (F11, F15).
+// Bewusst ohne Bastel-Anleitung: Der frühere Weg über chrome://flags ist
+// seit Chrome 138 weg (siehe docs/analyse.md, C23).
+export function nichtVerfuegbar(bereich, werkzeug) {
   bereich.replaceChildren(el('div', { class: 'einstellungen' },
     el('div', { class: 'fehler' },
-      el('p', { class: 'fehler-titel' }, 'Einmal in Chrome einschalten'),
-      el('p', {}, `${werkzeug} braucht einen Sensor, den Chrome erst nach einer einmaligen Einstellung freigibt. Alle anderen Werkzeuge laufen ohne.`),
-      el('ol', { class: 'anleitung' },
-        el('li', {}, 'In Chrome die Adresse ', el('strong', {}, 'chrome://flags'), ' öffnen (in die Adresszeile tippen).'),
-        el('li', {}, 'Oben im Suchfeld ', el('strong', {}, 'Generic Sensor Extra Classes'), ' eingeben.'),
-        el('li', {}, 'Den Schalter daneben auf ', el('strong', {}, 'Enabled'), ' stellen.'),
-        el('li', {}, 'Unten auf ', el('strong', {}, 'Relaunch'), ' tippen. Chrome startet neu.'),
-        el('li', {}, 'Werkbank wieder öffnen. Die Kachel ist dann nicht mehr ausgegraut.')))));
+      el('p', { class: 'fehler-titel' }, 'In Chrome derzeit gesperrt'),
+      el('p', {}, `${werkzeug} braucht einen Sensor, den Chrome an Web-Apps im Moment nicht weitergibt. Früher ließ er sich in den Chrome-Einstellungen freischalten; diese Möglichkeit hat Google entfernt.`),
+      el('p', {}, 'Alle anderen Werkzeuge funktionieren ganz normal. Gibt Chrome den Sensor wieder frei, ist dieses Werkzeug automatisch wieder nutzbar.'))));
 }

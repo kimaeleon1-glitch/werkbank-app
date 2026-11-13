@@ -170,10 +170,41 @@ export function starteOrientierung(beiWert, beiFehler, { frequenz = 30 } = {}) {
 
 // ------------------------------------------------------------ Magnetfeld
 
-// Magnetometer und Lichtsensor gibt es in Chrome nur mit dem Flag
-// „Generic Sensor Extra Classes" (chrome://flags).
-export const magnetfeldVerfuegbar = () => 'Magnetometer' in window;
-export const lichtVerfuegbar = () => 'AmbientLightSensor' in window;
+// Magnetometer und Lichtsensor gibt Chrome derzeit nicht frei. Das Flag
+// „Generic Sensor Extra Classes" wurde in Chrome 138 entfernt. Mit
+// „Experimental Web Platform features" gibt es die Schnittstellen zwar,
+// sie liefern aber keine Werte („Could not connect to a sensor").
+// Deshalb wird echt geprüft, ob ein Messwert kommt – nicht nur, ob es die
+// Schnittstelle gibt. Gibt Chrome die Sensoren wieder frei, gehen F11/F15
+// von selbst wieder.
+const geprueft = new Map();
+
+export function sensorLiefert(klassenName) {
+  if (!(klassenName in window)) return Promise.resolve(false);
+  if (!geprueft.has(klassenName)) {
+    geprueft.set(klassenName, new Promise((fertig) => {
+      let s;
+      const ende = (ok) => { try { s?.stop(); } catch { /* egal */ } fertig(ok); };
+      try {
+        s = new window[klassenName]({ frequency: 5 });
+        s.addEventListener('reading', () => ende(true), { once: true });
+        s.addEventListener('error', () => ende(false), { once: true });
+        s.start();
+        setTimeout(() => ende(false), WARTEZEIT_MS);
+      } catch {
+        ende(false);
+      }
+    }).then((ok) => {
+      // Ein Fehlschlag wird nicht gemerkt: beim nächsten Öffnen neu prüfen.
+      if (!ok) geprueft.delete(klassenName);
+      return ok;
+    }));
+  }
+  return geprueft.get(klassenName);
+}
+
+export const magnetfeldVerfuegbar = () => sensorLiefert('Magnetometer');
+export const lichtVerfuegbar = () => sensorLiefert('AmbientLightSensor');
 
 // Wiederholt den letzten Wert im Takt, solange Chrome nichts Neues meldet
 // (Chrome meldet nur geänderte Werte, siehe starteSchwerkraft).
