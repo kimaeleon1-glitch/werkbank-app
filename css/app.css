@@ -1,0 +1,334 @@
+/* Werkbank – Design
+   Dunkel als Standard, hell für Sonnenlicht. Kontrast mindestens 7:1.
+   Tasten mindestens 64 px hoch, Abstand mindestens 12 px. */
+
+:root {
+  --hg: #101214;        /* Hintergrund */
+  --flaeche: #1d2125;   /* Kacheln, Tasten */
+  --rand: #3a4148;
+  --text: #ffffff;
+  --text-leise: #c9d1d9;
+  --akzent: #ffb000;    /* Orange-Gelb */
+  --akzent-text: #101214;
+  --erfolg: #3ddc84;    /* Grün, mit dunklem Text */
+  --erfolg-text: #000000;
+  --warnung: #ff6b6b;
+  --abstand: 12px;
+  --knopf-hoehe: 72px;
+  color-scheme: dark;
+}
+
+[data-thema="hell"] {
+  --hg: #ffffff;
+  --flaeche: #eef0f2;
+  --rand: #5b636b;
+  --text: #000000;
+  --text-leise: #24292f;
+  --akzent: #7a4200;
+  --akzent-text: #ffffff;
+  --erfolg: #05612a;   /* mit Weiß 7,6:1 */
+  --erfolg-text: #ffffff;
+  --warnung: #b00020;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--hg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 20px;
+  line-height: 1.35;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* ------------------------------------------------------------ Kopfzeile */
+
+.kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--abstand);
+  padding: var(--abstand);
+  min-height: calc(var(--knopf-hoehe) + 2 * var(--abstand));
+  border-bottom: 2px solid var(--rand);
+}
+
+.kopf h1 {
+  flex: 1;
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kopf .knopf { flex: 0 0 auto; min-width: var(--knopf-hoehe); }
+.einstellungen-knopf { font-size: 36px; padding: 0; }
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* ------------------------------------------------------------ Tasten */
+
+.knopf {
+  min-height: var(--knopf-hoehe);
+  padding: 0 20px;
+  border: 2px solid var(--rand);
+  border-radius: 14px;
+  background: var(--flaeche);
+  color: var(--text);
+  font: inherit;
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.knopf:active { transform: scale(0.97); }
+.knopf:focus-visible { outline: 4px solid var(--akzent); outline-offset: 2px; }
+.knopf.haupt, .knopf[aria-pressed="true"] {
+  background: var(--akzent);
+  border-color: var(--akzent);
+  color: var(--akzent-text);
+}
+
+.leiste {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--abstand);
+  padding: var(--abstand);
+}
+
+.leiste .knopf { min-width: 0; padding: 0 4px; font-size: 20px; }
+
+/* ------------------------------------------------------------ Startseite */
+
+.kacheln {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--abstand);
+  padding: var(--abstand);
+}
+
+.kachel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 150px;
+  padding: 16px 8px;
+  border: 2px solid var(--rand);
+  border-radius: 18px;
+  background: var(--flaeche);
+  color: var(--text);
+  font: inherit;
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.kachel svg { width: 64px; height: 64px; color: var(--akzent); }
+.kachel:active { transform: scale(0.97); }
+.kachel:focus-visible { outline: 4px solid var(--akzent); outline-offset: 2px; }
+
+.fusszeile {
+  padding: var(--abstand) calc(2 * var(--abstand));
+  color: var(--text-leise);
+  font-size: 18px;
+}
+
+/* ------------------------------------------------------------ Messansicht */
+
+.mess {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  transition: background-color 0.15s;
+}
+
+.mess.treffer { background: var(--erfolg); color: var(--erfolg-text); }
+.mess.treffer .grafik { color: var(--erfolg-text); }
+
+.anzeige {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* quadratisch, damit die Drehung in Kantenlage hineinpasst */
+.drehbar {
+  width: min(94vw, 58dvh);
+  height: min(94vw, 58dvh);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: transform 0.25s;
+}
+
+.grafik {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+}
+
+.grafik svg { width: 100%; height: 100%; max-height: 100%; }
+
+.wert {
+  margin: 0;
+  font-size: clamp(64px, 20vw, 120px);
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.wert-einheit { font-size: 0.45em; margin-left: 0.1em; }
+.wert-einheit.grad { font-size: 1em; margin-left: 0; vertical-align: baseline; }
+
+.status {
+  margin: 8px 0 0;
+  min-height: 1.3em;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.zusatz {
+  margin: 4px 0 0;
+  min-height: 1.3em;
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gehalten {
+  margin: 6px 0 0;
+  padding: 4px 14px;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.mess.ist-gehalten .wert { text-decoration: underline 4px; text-underline-offset: 10px; }
+
+.hinweis {
+  margin: 0 var(--abstand);
+  padding: 10px 14px;
+  border-left: 6px solid var(--akzent);
+  background: var(--flaeche);
+  color: var(--text);
+  font-size: 18px;
+}
+
+.hinweis.warnung { border-left-color: var(--warnung); }
+
+/* ------------------------------------------------------------ Fehler, Meldung, Dialog */
+
+.fehler {
+  margin: calc(2 * var(--abstand));
+  padding: 20px;
+  border: 3px solid var(--warnung);
+  border-radius: 16px;
+  background: var(--flaeche);
+}
+
+.fehler-titel { margin-top: 0; font-size: 26px; font-weight: 800; }
+
+/* oben unter der Kopfzeile, damit sie die Tasten unten nie verdeckt */
+.meldung {
+  position: fixed;
+  left: var(--abstand);
+  right: var(--abstand);
+  top: calc(var(--knopf-hoehe) + 3 * var(--abstand) + env(safe-area-inset-top));
+  padding: 16px 20px;
+  border: 2px solid var(--akzent);
+  border-radius: 14px;
+  background: var(--flaeche);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  z-index: 10;
+}
+
+.dialog {
+  width: min(92vw, 520px);
+  padding: 20px;
+  border: 2px solid var(--rand);
+  border-radius: 18px;
+  background: var(--hg);
+  color: var(--text);
+}
+
+.dialog::backdrop { background: rgb(0 0 0 / 0.7); }
+.dialog h2 { margin-top: 0; font-size: 26px; }
+.dialog .leiste { padding: var(--abstand) 0 0; }
+
+.eingabe-zeile { display: flex; align-items: center; gap: var(--abstand); font-size: 24px; font-weight: 700; }
+
+.eingabe {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--knopf-hoehe);
+  padding: 0 16px;
+  border: 2px solid var(--rand);
+  border-radius: 14px;
+  background: var(--flaeche);
+  color: var(--text);
+  font: inherit;
+  font-size: 30px;
+  font-weight: 800;
+}
+
+/* ------------------------------------------------------------ Einstellungen */
+
+.einstellungen { padding: var(--abstand); }
+.einstellungen section { margin-bottom: 28px; }
+.einstellungen h2 { margin: 0 0 8px; font-size: 22px; color: var(--text-leise); }
+.einstellungen p { margin: 8px 0; }
+
+.auswahl {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 8px;
+}
+
+.auswahl .knopf { padding: 0 6px; font-size: 20px; }
+.auswahl > div .knopf { width: 100%; }
+.auswahl > div p { margin: 0 0 6px; }
+
+.einstellungen ul { margin: 8px 0; padding-left: 1.2em; }
+.einstellungen li { margin-bottom: 6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .drehbar, .mess { transition: none; }
+}
