@@ -13,6 +13,7 @@ const STANDARD = {
   nullpunkt: { flach: { x: 0, y: 0 }, kante: [0, 0, 0, 0], lot: { seitlich: 0, vorn: 0 } },
   missweisung: 0, // Grad, Ost positiv
   nordModus: 'magnetisch', // magnetisch | geografisch
+  standortZeigen: false, // Kompass: GPS-Standort anzeigen (der Standort selbst wird nie gespeichert)
   lattenLaengeMm: 2000, // Bezugslänge im Neigungsmesser
   linealFaktor: null, // CSS-Pixel pro mm, aus der Kalibrierung mit der Bankkarte
   rechner: {}, // nur Produktfaktoren: ergiebigkeit, sackAusbeute, rollenBreite, rollenLaenge

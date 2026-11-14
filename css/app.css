@@ -117,6 +117,9 @@ main {
 }
 
 .leiste .knopf { min-width: 0; padding: 0 4px; font-size: 20px; }
+/* vier Tasten: etwas kleinere Schrift, engerer Abstand, damit nichts überläuft */
+.leiste:has(> .knopf:nth-child(4)) { gap: 8px; }
+.leiste:has(> .knopf:nth-child(4)) .knopf { font-size: 17px; padding: 0 2px; }
 
 /* ------------------------------------------------------------ Startseite */
 
@@ -326,6 +329,9 @@ main {
 
 .auswahl .knopf { padding: 0 6px; font-size: 20px; }
 .auswahl > div .knopf { width: 100%; }
+.auswahl.raster { grid-auto-flow: row; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.auswahl.raster .knopf { font-size: 17px; padding: 0 2px; }
+.rechner-inhalt > .feld-name { margin: 0 0 6px; }
 .auswahl > div p { margin: 0 0 6px; }
 
 .einstellungen ul { margin: 8px 0; padding-left: 1.2em; }
@@ -601,3 +607,11 @@ main {
 /* 80er-Marke: Beschriftung links vom Strich, damit sie die 85 nicht überdeckt */
 .balken-marke.links { border-left: 0; border-right: 3px solid var(--warnung); padding: 0 4px 0 0; }
 .mess.sehr-laut .balken-marke { border-color: #000; color: #000; }
+
+/* Kompass: Standort */
+.standort { margin: 8px var(--abstand) 0; padding: 8px 14px; background: var(--flaeche); border-radius: 12px; }
+.standort[hidden] { display: none; }
+.standort-zeile { display: flex; justify-content: space-between; gap: 12px; margin: 4px 0; font-size: 18px; font-variant-numeric: tabular-nums; }
+.standort-zeile span { color: var(--text-leise); font-weight: 700; }
+.standort-zeile strong { text-align: right; overflow-wrap: anywhere; }
+.standort .knopf { width: 100%; margin-top: 6px; }

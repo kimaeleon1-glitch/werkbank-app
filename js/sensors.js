@@ -392,3 +392,26 @@ export async function starteLampe() {
   }
   return () => strom.getTracks().forEach((t) => t.stop());
 }
+
+// ------------------------------------------------------------ Standort
+
+// Standort über GPS (läuft auch ohne Netz, der erste Fix dauert dann länger).
+// beiPosition({ breite, laenge, genauigkeit }), Genauigkeit in m.
+// Liefert eine Stopp-Funktion.
+// Der Standort wird nur angezeigt, nie gespeichert oder verschickt.
+export function starteStandort(beiPosition, beiFehler) {
+  if (!navigator.geolocation) {
+    beiFehler('Dieses Gerät liefert keinen Standort.');
+    return () => {};
+  }
+  const id = navigator.geolocation.watchPosition(
+    ({ coords: c }) => beiPosition({
+      breite: c.latitude, laenge: c.longitude, genauigkeit: c.accuracy
+    }),
+    (e) => beiFehler(e.code === 1
+      ? 'Standort nicht erlaubt. Erlauben über die Website-Einstellungen von Chrome (Schloss-Symbol neben der Adresse) bzw. in den App-Infos von Werkbank.'
+      : 'Kein Standort. Ist der Standort im Handy eingeschaltet? Im Freien klappt es am besten.'),
+    { enableHighAccuracy: true, maximumAge: 0 }
+  );
+  return () => navigator.geolocation.clearWatch(id);
+}

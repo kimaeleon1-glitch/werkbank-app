@@ -136,3 +136,74 @@ export function vibrationsMesser(fensterMs = 1000) {
 
 // Prozentuale Änderung gegenüber einem Vergleichswert („vorher/nachher").
 export const aenderungProzent = (vorher, jetzt) => (vorher > 0 ? ((jetzt - vorher) / vorher) * 100 : null);
+
+// ------------------------------------------------------------ Einheiten umrechnen
+
+// Je Größe: Einheiten als [Kürzel, Name, Faktor zur Grundeinheit].
+// Temperatur hat Versatz und wird gesondert gerechnet.
+export const GROESSEN = {
+  laenge: { titel: 'Länge', einheiten: [
+    ['mm', 'Millimeter', 0.001], ['cm', 'Zentimeter', 0.01], ['m', 'Meter', 1], ['km', 'Kilometer', 1000],
+    ['in', 'Zoll', 0.0254], ['ft', 'Fuß', 0.3048], ['yd', 'Yard', 0.9144], ['mi', 'Meile', 1609.344]] },
+  flaeche: { titel: 'Fläche', einheiten: [
+    ['cm²', 'Quadratzentimeter', 1e-4], ['m²', 'Quadratmeter', 1], ['a', 'Ar', 100], ['ha', 'Hektar', 1e4],
+    ['km²', 'Quadratkilometer', 1e6], ['in²', 'Quadratzoll', 0.00064516], ['ft²', 'Quadratfuß', 0.09290304]] },
+  volumen: { titel: 'Volumen', einheiten: [
+    ['ml', 'Milliliter', 0.001], ['l', 'Liter', 1], ['m³', 'Kubikmeter', 1000], ['cm³', 'Kubikzentimeter', 0.001],
+    ['gal (US)', 'US-Gallone', 3.785411784], ['gal (UK)', 'Brit. Gallone', 4.54609], ['ft³', 'Kubikfuß', 28.316846592]] },
+  gewicht: { titel: 'Gewicht', einheiten: [
+    ['g', 'Gramm', 0.001], ['kg', 'Kilogramm', 1], ['t', 'Tonne', 1000],
+    ['lb', 'Pfund (engl.)', 0.45359237], ['oz', 'Unze', 0.028349523125]] },
+  druck: { titel: 'Druck', einheiten: [
+    ['Pa', 'Pascal', 1], ['hPa', 'Hektopascal = mbar', 100], ['kPa', 'Kilopascal', 1000], ['bar', 'Bar', 1e5],
+    ['MPa', 'Megapascal = N/mm²', 1e6], ['psi', 'Pfund/Quadratzoll', 6894.757293168], ['atm', 'Atmosphäre', 101325],
+    ['mmHg', 'Millimeter Quecksilber', 133.322387415], ['mWS', 'Meter Wassersäule', 9806.65]] },
+  temperatur: { titel: 'Temperatur', einheiten: [['°C', 'Celsius'], ['°F', 'Fahrenheit'], ['K', 'Kelvin']] },
+  kraft: { titel: 'Kraft', einheiten: [
+    ['N', 'Newton', 1], ['kN', 'Kilonewton', 1000], ['kp', 'Kilopond', 9.80665], ['lbf', 'Pfund-Kraft', 4.4482216152605]] },
+  drehmoment: { titel: 'Drehmoment', einheiten: [
+    ['Nm', 'Newtonmeter', 1], ['kpm', 'Kilopondmeter', 9.80665],
+    ['lbf·ft', 'Pound-foot', 1.3558179483314], ['lbf·in', 'Pound-inch', 0.1129848290276]] },
+  leistung: { titel: 'Leistung', einheiten: [
+    ['W', 'Watt', 1], ['kW', 'Kilowatt', 1000], ['PS', 'Pferdestärke', 735.49875], ['hp', 'Horsepower', 745.69987158227]] },
+  energie: { titel: 'Energie', einheiten: [
+    ['J', 'Joule', 1], ['kJ', 'Kilojoule', 1000], ['Wh', 'Wattstunde', 3600], ['kWh', 'Kilowattstunde', 3.6e6],
+    ['kcal', 'Kilokalorie', 4186.8]] },
+  tempo: { titel: 'Tempo', einheiten: [
+    ['m/s', 'Meter pro Sekunde', 1], ['km/h', 'Kilometer pro Stunde', 1 / 3.6],
+    ['mph', 'Meilen pro Stunde', 0.44704], ['kn', 'Knoten', 1852 / 3600]] },
+  winkel: { titel: 'Winkel', einheiten: [
+    ['°', 'Grad', 1], ['rad', 'Radiant', 180 / Math.PI], ['gon', 'Gon', 0.9], ['′', 'Bogenminute', 1 / 60]] }
+};
+
+const ZU_KELVIN = { '°C': (w) => w + 273.15, '°F': (w) => (w - 32) * 5 / 9 + 273.15, K: (w) => w };
+const VON_KELVIN = { '°C': (k) => k - 273.15, '°F': (k) => (k - 273.15) * 9 / 5 + 32, K: (k) => k };
+
+// Rechnet wert (in Einheit `von`) in alle Einheiten der Größe um.
+// Liefert [{ kuerzel, name, wert }] oder null bei ungültiger Eingabe.
+export function umrechnen(groesse, wert, von) {
+  const g = GROESSEN[groesse];
+  if (!g || !Number.isFinite(wert)) return null;
+  if (groesse === 'temperatur') {
+    const k = ZU_KELVIN[von](wert);
+    if (k < 0) return null; // unter dem absoluten Nullpunkt
+    return g.einheiten.map(([kuerzel, name]) => ({ kuerzel, name, wert: VON_KELVIN[kuerzel](k) }));
+  }
+  const eintrag = g.einheiten.find(([k]) => k === von);
+  if (!eintrag) return null;
+  const grund = wert * eintrag[2];
+  return g.einheiten.map(([kuerzel, name, faktor]) => ({ kuerzel, name, wert: grund / faktor }));
+}
+
+// Zahl mit bis zu 6 gültigen Stellen (ab 100.000 ganzzahlig) im deutschen Format; sehr große und
+// sehr kleine Werte als Zehnerpotenz.
+export function kurzZahl(w) {
+  if (w === 0 || Object.is(w, -0)) return '0';
+  const b = Math.abs(w);
+  if (b >= 1e12 || b < 1e-6) {
+    const [m, e] = w.toExponential(4).split('e');
+    return `${Number(m).toLocaleString('de-DE', { maximumFractionDigits: 4 })} · 10^${Number(e)}`;
+  }
+  const n = b >= 1e5 ? Math.round(w) : Number(w.toPrecision(6));
+  return (Object.is(n, -0) ? 0 : n).toLocaleString('de-DE', { maximumFractionDigits: 10 });
+}

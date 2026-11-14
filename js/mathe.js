@@ -204,3 +204,69 @@ export function vektorMittel(n) {
     );
   };
 }
+
+// ---------------------------------------------------------------- Standort
+
+// Geografische Koordinaten (WGS84, Grad) → UTM. Krüger-Reihen, genauer als
+// 1 mm im Zonenbereich. Liefert { zone, band, ost, nord } (Meter) oder null
+// außerhalb von 80° S bis 84° N (dort gilt UPS, das brauchen wir nicht).
+export function utm(breite, laenge) {
+  if (!(breite >= -80 && breite <= 84)) return null;
+  laenge = normiere180(laenge);
+  let zone = Math.floor((laenge + 180) / 6) + 1;
+  if (zone > 60) zone = 60;
+  // Ausnahmen: Südwestnorwegen und Spitzbergen
+  if (breite >= 56 && breite < 64 && laenge >= 3 && laenge < 12) zone = 32;
+  if (breite >= 72) {
+    if (laenge >= 0 && laenge < 9) zone = 31;
+    else if (laenge >= 9 && laenge < 21) zone = 33;
+    else if (laenge >= 21 && laenge < 33) zone = 35;
+    else if (laenge >= 33 && laenge < 42) zone = 37;
+  }
+  const a = 6378137;
+  const f = 1 / 298.257223563;
+  const n = f / (2 - f);
+  const A = (a / (1 + n)) * (1 + n * n / 4 + n ** 4 / 64);
+  const al = [n / 2 - (2 / 3) * n * n + (5 / 16) * n ** 3, (13 / 48) * n * n - (3 / 5) * n ** 3, (61 / 240) * n ** 3];
+  const phi = rad(breite);
+  const lam = rad(laenge - (zone * 6 - 183));
+  const e2n = (2 * Math.sqrt(n)) / (1 + n);
+  const t = Math.sinh(Math.atanh(Math.sin(phi)) - e2n * Math.atanh(e2n * Math.sin(phi)));
+  const xi = Math.atan2(t, Math.cos(lam));
+  const eta = Math.atanh(Math.sin(lam) / Math.sqrt(1 + t * t));
+  let E = eta;
+  let N = xi;
+  for (let j = 1; j <= 3; j++) {
+    E += al[j - 1] * Math.cos(2 * j * xi) * Math.sinh(2 * j * eta);
+    N += al[j - 1] * Math.sin(2 * j * xi) * Math.cosh(2 * j * eta);
+  }
+  const k0 = 0.9996;
+  const ost = 500000 + k0 * A * E;
+  const nord = k0 * A * N + (breite < 0 ? 10000000 : 0);
+  const band = 'CDEFGHJKLMNPQRSTUVWX'[Math.min(19, Math.floor((breite + 80) / 8))];
+  return { zone, band, ost, nord };
+}
+
+// UTM → MGRS (militärisches Gitter, auf 1 m gerundet), z. B. „32U PD 40234 03141".
+export function mgrs(u) {
+  if (!u) return null;
+  const spalten = ['ABCDEFGH', 'JKLMNPQR', 'STUVWXYZ'][(u.zone - 1) % 3];
+  const zeilen = 'ABCDEFGHJKLMNPQRSTUV';
+  const e = Math.round(u.ost);
+  const n = Math.round(u.nord);
+  const s = spalten[Math.floor(e / 100000) - 1];
+  const z = zeilen[(Math.floor(n / 100000) + (u.zone % 2 === 0 ? 5 : 0)) % 20];
+  const fuenf = (v) => String(v % 100000).padStart(5, '0');
+  return `${u.zone}${u.band} ${s}${z} ${fuenf(e)} ${fuenf(n)}`;
+}
+
+// Grad als Grad, Minuten, Sekunden, z. B. 52° 21′ 38,1″ N.
+export function gradMinSek(wert, plus, minus) {
+  const w = Math.abs(wert);
+  let g = Math.floor(w);
+  let m = Math.floor((w - g) * 60);
+  let s = Math.round(((w - g) * 60 - m) * 600) / 10;
+  if (s >= 60) { s = 0; m++; }
+  if (m >= 60) { m = 0; g++; }
+  return `${g}° ${m}′ ${zahl(s, 1)}″ ${wert < 0 ? minus : plus}`;
+}

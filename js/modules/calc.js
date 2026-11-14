@@ -3,8 +3,8 @@
 // Produktfaktoren (Ergiebigkeit, Sackausbeute), siehe docs/analyse.md A3.
 
 import { lies, setze } from '../einstellungen.js';
-import { zahl, inMm, vonMm, LAENGEN_EINHEITEN } from '../mathe.js';
-import { farbe, fliesen, tapete, beton, gefaelle } from '../rechnen.js';
+import { zahl } from '../mathe.js';
+import { farbe, fliesen, tapete, beton, gefaelle, GROESSEN, umrechnen, kurzZahl } from '../rechnen.js';
 import { el, knopf } from '../ansicht.js';
 
 const lesen = (eingabe) => {
@@ -134,21 +134,45 @@ const RECHNER = {
   },
   umrechnung: {
     titel: 'Umrechnung',
-    felder: () => ({ wert: feld('Wert', '', { beispiel: '100' }), einheit: { wert: 'mm' } }),
-    rechne: (f) => {
-      const w = f.wert.zahl();
-      if (!Number.isFinite(w)) return 'Wert eintragen.';
-      const mm = inMm(w, f.einheit.wert);
-      const namen = { mm: 'mm', cm: 'cm', m: 'm', zoll: 'Zoll' };
-      const stellen = { mm: 1, cm: 2, m: 4, zoll: 3 };
-      return LAENGEN_EINHEITEN.filter((e) => e !== f.einheit.wert)
-        .map((e) => [namen[e], zahl(vonMm(mm, e), stellen[e])]);
+    // Eigener Aufbau: Größe wählen, Ausgangseinheit wählen, Wert eingeben.
+    baue(inhalt) {
+      const wahlGroesse = { wert: 'laenge' };
+      const wahlEinheit = { wert: 'm' };
+      const wert = feld('Wert', 'm', { beispiel: '1' });
+      const einheiten = el('div');
+      const ergebnis = el('div', { class: 'ergebnis', 'aria-live': 'polite' });
+      const aktualisiere = () => {
+        const w = wert.zahl();
+        if (!Number.isFinite(w)) return zeigeErgebnis(ergebnis, 'Wert eintragen.');
+        const liste = umrechnen(wahlGroesse.wert, w, wahlEinheit.wert);
+        if (!liste) return zeigeErgebnis(ergebnis, 'Kälter als der absolute Nullpunkt geht nicht.');
+        zeigeErgebnis(ergebnis, liste.filter((e) => e.kuerzel !== wahlEinheit.wert)
+          .map((e) => [e.name, `${kurzZahl(e.wert)} ${e.kuerzel}`]));
+      };
+      const einheitWaehlen = (k) => {
+        wert.zeile.querySelector('.feld-einheit').textContent = k;
+        aktualisiere();
+      };
+      const zeigeEinheiten = () => {
+        const liste = GROESSEN[wahlGroesse.wert].einheiten;
+        wahlEinheit.wert = liste.some(([k]) => k === wahlEinheit.wert) ? wahlEinheit.wert : liste[0][0];
+        einheiten.replaceChildren(
+          el('p', { class: 'feld-name' }, 'Von'),
+          wahl(Object.fromEntries(liste.map(([k]) => [k, k])), wahlEinheit, einheitWaehlen, 'raster'));
+        einheitWaehlen(wahlEinheit.wert);
+      };
+      wert.eingabe.addEventListener('input', aktualisiere);
+      inhalt.replaceChildren(
+        el('p', { class: 'feld-name' }, 'Größe'),
+        wahl(Object.fromEntries(Object.entries(GROESSEN).map(([id, g]) => [id, g.titel])), wahlGroesse, zeigeEinheiten, 'raster'),
+        einheiten, wert.zeile, ergebnis);
+      zeigeEinheiten();
     }
   }
 };
 
 // Tasten zum Wählen einer Option; ändert ziel.wert.
-function wahl(optionen, ziel, nachher) {
+function wahl(optionen, ziel, nachher, klasse = '') {
   const knoepfe = Object.entries(optionen).map(([wert, text]) => {
     const k = knopf(text, () => {
       ziel.wert = wert;
@@ -158,7 +182,7 @@ function wahl(optionen, ziel, nachher) {
     k.setAttribute('aria-pressed', String(wert === ziel.wert));
     return k;
   });
-  return el('div', { class: 'auswahl', role: 'group' }, knoepfe);
+  return el('div', { class: `auswahl ${klasse}`.trim(), role: 'group' }, knoepfe);
 }
 
 export default {
@@ -170,6 +194,11 @@ export default {
     function oeffne(id) {
       reiter.querySelectorAll('.knopf').forEach((k) => k.setAttribute('aria-pressed', String(k.dataset.id === id)));
       const r = RECHNER[id];
+      if (r.baue) {
+        r.baue(inhalt);
+        inhalt.closest('main')?.scrollTo(0, 0);
+        return;
+      }
       const f = r.felder();
       const ergebnis = el('div', { class: 'ergebnis', 'aria-live': 'polite' });
       const aktualisiere = () => zeigeErgebnis(ergebnis, r.rechne(f));
@@ -186,8 +215,6 @@ export default {
             f.wert.zeile.querySelector('.feld-einheit').textContent = einheit;
             aktualisiere();
           }));
-        } else if (id === 'umrechnung' && name === 'einheit') {
-          teile.push(wahl({ mm: 'mm', cm: 'cm', m: 'm', zoll: 'Zoll' }, teil, aktualisiere));
         }
       }
       inhalt.replaceChildren(...teile, ergebnis);

@@ -1,10 +1,12 @@
 // F3 Kompass: Kurs aus dem Orientierungssensor, wahlweise auf magnetisch
 // oder geografisch Nord (mit der Missweisung aus den Einstellungen).
+// Auf Wunsch zeigt er den GPS-Standort (Grad, UTM, MGRS). Der Standort wird
+// nur angezeigt, nie gespeichert oder verschickt.
 
-import { starteOrientierung, starteMagnetfeld, magnetfeldVerfuegbar } from '../sensors.js';
+import { starteOrientierung, starteMagnetfeld, magnetfeldVerfuegbar, starteStandort } from '../sensors.js';
 import { lies, setze } from '../einstellungen.js';
-import { kursAusMatrix, kreisGlaettung, himmelsrichtung, normiere360 } from '../mathe.js';
-import { el, messansicht, haltenKnopf, knopf, fehler } from '../ansicht.js';
+import { kursAusMatrix, kreisGlaettung, himmelsrichtung, normiere360, utm, mgrs, gradMinSek } from '../mathe.js';
+import { el, messansicht, haltenKnopf, knopf, fehler, meldung } from '../ansicht.js';
 
 // Erdmagnetfeld in Mitteleuropa: etwa 48–50 µT. Deutlich daneben heißt Störung.
 const FELD_MIN = 25;
@@ -43,6 +45,7 @@ export default {
     a.ansicht.insertBefore(hinweis, a.leiste);
     let feldGestoert = false;
     let stoppFeld = () => {};
+    let aus = false;
 
     function zeigeHinweis() {
       const texte = [];
@@ -82,11 +85,53 @@ export default {
       hinweis.classList.remove('warnung');
       hinweis.textContent = ACHT;
     });
-    a.leiste.append(nordKnopf, achtKnopf);
-    zeigeHinweis();
+    // ---- Standort
+    const standort = el('div', { class: 'standort', hidden: true, 'aria-live': 'polite' });
+    a.ansicht.insertBefore(standort, a.leiste);
+    let stoppStandort = null;
+    let letzteKoordinaten = '';
 
-    // Störungserkennung nur mit Chrome-Flag möglich (siehe docs/analyse.md, B3).
-    if (magnetfeldVerfuegbar()) {
+    const zeile = (name, wert) => el('p', { class: 'standort-zeile' }, el('span', {}, name), el('strong', {}, wert));
+    function zeigeStandort({ breite, laenge, genauigkeit }) {
+      const u = utm(breite, laenge);
+      letzteKoordinaten = `${breite.toFixed(6)}, ${laenge.toFixed(6)}`;
+      standort.replaceChildren(
+        zeile('Breite, Länge', letzteKoordinaten),
+        zeile('', `${gradMinSek(breite, 'N', 'S')}  ${gradMinSek(laenge, 'O', 'W')}`),
+        u ? zeile('UTM', `${u.zone}${u.band} ${Math.round(u.ost)} ${Math.round(u.nord)}`) : null,
+        u ? zeile('MGRS', mgrs(u)) : null,
+        zeile('Genauigkeit', `± ${Math.round(genauigkeit)} m`),
+        kopierKnopf);
+    }
+    const kopierKnopf = knopf('Koordinaten kopieren', async () => {
+      try {
+        await navigator.clipboard.writeText(letzteKoordinaten);
+        meldung('Kopiert: ' + letzteKoordinaten, 2500);
+      } catch {
+        meldung('Kopieren nicht möglich.', 2500);
+      }
+    });
+    function standortAn(an) {
+      setze('standortZeigen', an);
+      standortKnopf.setAttribute('aria-pressed', String(an));
+      standort.hidden = !an;
+      stoppStandort?.();
+      stoppStandort = null;
+      if (!an) return;
+      standort.replaceChildren(el('p', { class: 'standort-zeile' }, 'Standort wird gesucht … Im Freien geht es schneller.'));
+      stoppStandort = starteStandort(zeigeStandort, (text) => {
+        standort.replaceChildren(el('p', { class: 'standort-zeile fehler-text' }, text));
+      });
+    }
+    const standortKnopf = knopf('Standort', () => standortAn(standort.hidden));
+
+    a.leiste.append(nordKnopf, achtKnopf, standortKnopf);
+    zeigeHinweis();
+    standortAn(lies('standortZeigen'));
+
+    // Störungserkennung nur, wenn Chrome den Magnetsensor freigibt (docs/analyse.md, B3/C23).
+    magnetfeldVerfuegbar().then((ja) => {
+      if (!ja || aus) return;
       stoppFeld = starteMagnetfeld(({ x, y, z }) => {
         const ut = Math.hypot(x, y, z);
         const gestoert = ut < FELD_MIN || ut > FELD_MAX;
@@ -95,12 +140,13 @@ export default {
           zeigeHinweis();
         }
       }, () => {});
-    }
+    });
 
     const stoppOrientierung = starteOrientierung(aufWert, (text) => {
       stoppFeld();
+      stoppStandort?.();
       fehler(bereich, text);
     });
-    return () => { stoppOrientierung(); stoppFeld(); };
+    return () => { aus = true; stoppOrientierung(); stoppFeld(); stoppStandort?.(); };
   }
 };

@@ -3,7 +3,7 @@
 // Bei JEDER Änderung an einer ausgelieferten Datei VERSION erhöhen. Neue
 // Dateien in DATEIEN eintragen (der Test tests/cache.test.mjs prüft das).
 
-const VERSION = '1.2.2';
+const VERSION = '1.3.0';
 const CACHE = `werkbank-${VERSION}`;
 
 const DATEIEN = [
